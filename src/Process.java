@@ -19,7 +19,7 @@ public class Process {
         result += percentage * Math.log(percentage)/Math.log(2.0);
       }
     }
-    return (-result);
+    return (0 - result);
   }
     
   public double Information_Gain(String Attr_name, double pivot, MyDB MyDatabase) {
@@ -46,10 +46,17 @@ public class Process {
     double ig;
     
     System.out.println("+++ At node: " + MyDatabase.where);
-    System.out.println("--- Node on Path: " + branch.get_count() + " / " + MyDatabase.attr_count());
+    System.out.println("--- Node on Path: " + branch.get_count() + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
     
-    if( branch.get_count() == MyDatabase.attr_count()) {
+    if( branch.get_count() == MyDatabase.attr_count() || MyDatabase.row_count == 0) {
       //TODO Prunning here
+      int i = MyDatabase.largest_percentage_class();
+      if (i != -1) {
+        System.out.println("Class: " + i);
+      }
+      else {
+        System.out.println("There is no record in this node");
+      }
     }
     else {
       while(true){
@@ -58,7 +65,7 @@ public class Process {
           if( branch.not_in_branch(Attr_name) ){
             double temp_pivot = MyDatabase.best_pivot(Attr_name);
             ig = Information_Gain(Attr_name, temp_pivot, MyDatabase);
-            System.out.println("$$$ " + Attr_name + " has IG: " + ig);
+            System.out.println("$$$ " + Attr_name + " has IG: " + ig + " splited at: " + temp_pivot);
             if( "".equals(max_ig_attr)) {
               max_ig = ig;
               max_ig_attr = Attr_name;
@@ -90,6 +97,9 @@ public class Process {
     Database database = new Database(filename);
     MyDB MyDatabase = new MyDB(database);
     MyDatabase.initialize_target_classes();
+    for(int i = 1; i <= number_of_target_classes; i++) {
+      System.out.println("Class " + i + " from " + target_classes[i-1] + " to " + target_classes[i]);
+    }
     Recursive_Build_Decision_Tree(MyDatabase, branch);
   }
 
@@ -227,22 +237,22 @@ public class Process {
 
     public void initialize_target_classes() {
       ResultSet temp;
-      float max = 0;
-      float min = 0;
+      double max = 0;
+      double min = 0;
 
       try {
         temp = data.query( max_str(target_attr) );  
         temp.first();
-        max = temp.getFloat(1);
+        max = temp.getDouble(1);
         temp = data.query( min_str(target_attr) );
         temp.first();
-        min = temp.getFloat(1);
+        min = temp.getDouble(1);
       
       } catch (SQLException ex) {
         Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
       }
       
-      double delta = (max - min)/5.0;
+      double delta = (max - min)/number_of_target_classes;
       target_classes = new double[number_of_target_classes + 1];
       
       for(int i = 0; i <= number_of_target_classes; i++) {
@@ -290,7 +300,8 @@ public class Process {
         
         current.first();   
         potion_of_target_attr.first();
-
+        double temp = potion_of_target_attr.getDouble(1);
+        temp = current.getDouble(1);
         result = potion_of_target_attr.getDouble(1)/current.getDouble(1);
         
       } catch (SQLException ex) {
@@ -365,6 +376,10 @@ public class Process {
       int k = 0;
       String result = "";
       
+      if(" WHERE OPEN <= 118.31 AND HIGH <= 115.237 AND LOW > 112.932".equals(where)) {
+        k = 0;
+      }
+      
       for(int i = 1; i <= number_of_target_classes; i++) {
         double percentage = percentage_of_target_attr(i);
         if( max_percent < percentage) {
@@ -373,7 +388,7 @@ public class Process {
         }
       }
       
-      return k;
+      return k == 0 ? -1 : k;
     }
 
     // SQL strings
