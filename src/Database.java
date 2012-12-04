@@ -304,7 +304,7 @@ public class Database {
 		String query = "create table if not exists " + tableName + "(";
 		for(int i = 0; i < numofCol; i++) {
 			if(i != 0) query += ",";
-			query += colName[i] + " float";
+			query += colName[i] + "  DECIMAL(20,10)";
 		}
 		query += ")";
 		return query;
