@@ -8,7 +8,7 @@ public class Process {
   
   public double target_classes[];
   
-  public int number_of_target_classes = 2;
+  public int number_of_target_classes = 5;
   
   public double Entropy_Numeric(MyDB MyDatabase) {
     double result = 0.0;
@@ -49,11 +49,11 @@ public class Process {
     System.out.println("+++ At node: " + MyDatabase.where + 
                        "\n--- Node on Path: " + MyTree.height + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
     
-    if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0) {
+    if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0 || MyDatabase.largest_percentage() >= 0.95) {
       //TODO Prunning here
       int i = MyDatabase.largest_percentage_class();
       if (i != -1) {
-        System.out.println("Class: " + i);
+        System.out.println("Class: " + i + " with percentage: "+ MyDatabase.largest_percentage());
         MyTree.current.class_number = i;
       }
       else {
@@ -68,7 +68,7 @@ public class Process {
           if( MyTree.not_in_branch(Attr_name) ){
             temp_pivot = MyDatabase.best_pivot(Attr_name);
             ig = Information_Gain(Attr_name, temp_pivot, MyDatabase);
-            System.out.println("$$$ " + Attr_name + " has IG: " + ig + " splited at: " + temp_pivot);
+//            System.out.println("$$$ " + Attr_name + " has IG: " + ig + " splited at: " + temp_pivot);
             if( "".equals(max_ig_attr)) {
               max_ig = ig;
               max_ig_attr = Attr_name;
@@ -412,16 +412,29 @@ public class Process {
         return result;
       }
     }
+    
+    // return the most percentage
+    public double largest_percentage() {
+      double max_percent = 0;
+      int k = 0;
+      String result = "";     
+      
+      for(int i = 1; i <= number_of_target_classes; i++) {
+        double percentage = percentage_of_target_attr(i);
+        if( max_percent < percentage) {
+          max_percent = percentage;
+          k = i;
+        }
+      }
+      
+      return k == 0 ? -1 : max_percent;
+    }
 
     // return the class with most percentage
     public int largest_percentage_class() {
       double max_percent = 0;
       int k = 0;
-      String result = "";
-      
-      if(" WHERE OPEN <= 118.31 AND HIGH <= 115.237 AND LOW > 112.932".equals(where)) {
-        k = 0;
-      }
+      String result = "";     
       
       for(int i = 1; i <= number_of_target_classes; i++) {
         double percentage = percentage_of_target_attr(i);
