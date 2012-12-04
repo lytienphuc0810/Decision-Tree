@@ -39,7 +39,7 @@ public class Process {
     return current_entropy - sum_entropy;
   }
 
-  public void Recursive_Build_Decision_Tree(MyDB MyDatabase, Branch branch) {
+  public void Recursive_Build_Decision_Tree(MyDB MyDatabase, Tree MyTree) {
     double max_ig = 0;
     String max_ig_attr = "";
     double pivot = 0;
@@ -47,23 +47,25 @@ public class Process {
     double ig;
     
     System.out.println("+++ At node: " + MyDatabase.where + 
-                       "\n--- Node on Path: " + branch.get_count() + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
+                       "\n--- Node on Path: " + MyTree.height + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
     
-    if( branch.get_count() == MyDatabase.attr_count() || MyDatabase.row_count == 0) {
+    if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0) {
       //TODO Prunning here
       int i = MyDatabase.largest_percentage_class();
       if (i != -1) {
         System.out.println("Class: " + i);
+        MyTree.current.class_number = i;
       }
       else {
         System.out.println("There is no record in this node");
+        MyTree.current.class_number = -1;
       }
     }
     else {
       while(true){
         String Attr_name = MyDatabase.get_attr();
         if( Attr_name != null ) {
-          if( branch.not_in_branch(Attr_name) ){
+          if( MyTree.not_in_branch(Attr_name) ){
             temp_pivot = MyDatabase.best_pivot(Attr_name);
             ig = Information_Gain(Attr_name, temp_pivot, MyDatabase);
             System.out.println("$$$ " + Attr_name + " has IG: " + ig + " splited at: " + temp_pivot);
@@ -85,16 +87,24 @@ public class Process {
           break;
         }
       }
-
-      branch.add( max_ig_attr );
-      Recursive_Build_Decision_Tree( MyDatabase.split(max_ig_attr, pivot, 1), branch.clone() );     
-      Recursive_Build_Decision_Tree( MyDatabase.split(max_ig_attr, pivot, 2), branch.clone() );
+      
+      MyTree.current.Attr_name = max_ig_attr;
+      MyTree.current.pivot = pivot;
+      MyTree.increase_tree_height();
+      MyTree.add_to_tree( new Node(), false);
+      Recursive_Build_Decision_Tree( MyDatabase.split(max_ig_attr, pivot, 1), MyTree );
+      MyTree.backtrack();
+      
+      MyTree.add_to_tree( new Node(), true);
+      Recursive_Build_Decision_Tree( MyDatabase.split(max_ig_attr, pivot, 2), MyTree );
+      MyTree.backtrack();
+      MyTree.decrease_tree_height();
     }
   }
 
   public void Build_Decision_Tree(String filename) {
     //Recursive here
-    Branch branch = new Branch();
+    Tree MyTree = new Tree();
     Database database = new Database(filename);
     MyDB MyDatabase = new MyDB(database);
     
@@ -104,75 +114,80 @@ public class Process {
       System.out.println("Class " + i + " from " + target_classes[i-1] + " to " + target_classes[i]);
     }
     
-    Recursive_Build_Decision_Tree(MyDatabase, branch);
+    Recursive_Build_Decision_Tree(MyDatabase, MyTree);
+    int a =3;
   }
 
-  public class Branch {
-    // danh sach lien ket dong
-    public Node head;
-    public Node tail;
-    public int count;
-    public Branch() {
-      head = null;
-      tail = null;
-      count = 0;
+  public class Tree {
+    public Node root;
+    public Node current;
+    public int height;
+    
+    public Tree() {
+      root = new Node();
+      current = root;
+      height = 0;
     }
     
-    @Override
-    public Branch clone() {
-      Branch clone_branch = new Branch();
-      Node temp = head;
-      while(temp != null) {
-        clone_branch.add(temp.Attr_name);
-        temp = temp.next;
-      }
-      return clone_branch;
-    }
-    
-    public void add(String Attr_name) {
-      if(head == null) {
-        head = new Node(Attr_name);
-        tail = head;
+    public void add_to_tree(Node node, boolean right) {
+      if( root == null ) {
+        root = node;
+        current = node;
       }
       else {
-        tail.next = new Node(Attr_name);
-        tail = tail.next;
-      }
-      count++;
-    }
-
-    public boolean not_in_branch(String Attr_name) {
-      Node temp = head;
-      while( temp!=null ) {
-        if( temp.Attr_name.equals(Attr_name) ){
-          return false;
+        if(right) {
+          current.right = node;
+          current.right.parent = current;
+          current = current.right;
         }
-        temp = temp.next;
+        else {
+          current.left = node;
+          current.left.parent = current;
+          current = current.left;
+        }
       }
-      return true;
     }
-
-    public void add_final_result(String result) {
-      tail.add_result( result );
+    public void increase_tree_height() {
+      height++;
     }
     
-    public int get_count() {
-      return count;
+    public void decrease_tree_height() {
+      height--;
+    }
+    
+    public void backtrack() {
+      current = current.parent;
+    }
+    
+    public boolean not_in_branch(String Attr_name) {
+      Node temp = current;
+      while(temp != null) {
+        if( temp.Attr_name.equals(Attr_name) ) {
+          return false;
+        }
+        temp = temp.parent;
+      }
+      return true;
     }
   }
 
   public class Node {
     public String Attr_name;
-    public String value;
-    public Node next;
-    public Node(String v) {
-      Attr_name = v;
-      value = "";
-      next = null;
-    }
+    public double pivot;
+    public Node right;    
+    public Node left;
+    public Node parent;
+    
+    // 0 la khong phai node la, -1 la ko thuoc class nao
+    public int class_number;
 
-    public void add_result(String result) {
-      value = result;
+    public Node() {
+      Attr_name = "";
+      right = null;
+      left = null;
+      parent = null;
+      class_number = 0; 
+      pivot = -1;
     }
   }
   
