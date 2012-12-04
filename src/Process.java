@@ -43,10 +43,11 @@ public class Process {
     double max_ig = 0;
     String max_ig_attr = "";
     double pivot = 0;
+    double temp_pivot;
     double ig;
     
-    System.out.println("+++ At node: " + MyDatabase.where);
-    System.out.println("--- Node on Path: " + branch.get_count() + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
+    System.out.println("+++ At node: " + MyDatabase.where + 
+                       "\n--- Node on Path: " + branch.get_count() + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
     
     if( branch.get_count() == MyDatabase.attr_count() || MyDatabase.row_count == 0) {
       //TODO Prunning here
@@ -63,7 +64,7 @@ public class Process {
         String Attr_name = MyDatabase.get_attr();
         if( Attr_name != null ) {
           if( branch.not_in_branch(Attr_name) ){
-            double temp_pivot = MyDatabase.best_pivot(Attr_name);
+            temp_pivot = MyDatabase.best_pivot(Attr_name);
             ig = Information_Gain(Attr_name, temp_pivot, MyDatabase);
             System.out.println("$$$ " + Attr_name + " has IG: " + ig + " splited at: " + temp_pivot);
             if( "".equals(max_ig_attr)) {
@@ -96,10 +97,13 @@ public class Process {
     Branch branch = new Branch();
     Database database = new Database(filename);
     MyDB MyDatabase = new MyDB(database);
+    
     MyDatabase.initialize_target_classes();
+    
     for(int i = 1; i <= number_of_target_classes; i++) {
       System.out.println("Class " + i + " from " + target_classes[i-1] + " to " + target_classes[i]);
     }
+    
     Recursive_Build_Decision_Tree(MyDatabase, branch);
   }
 
@@ -114,6 +118,7 @@ public class Process {
       count = 0;
     }
     
+    @Override
     public Branch clone() {
       Branch clone_branch = new Branch();
       Node temp = head;
@@ -173,16 +178,17 @@ public class Process {
   
   public class MyDB {
     private Database data;
-    private String target_attr;
     private String table_name;
-    private String select_all;
     private String[] column_name;
     private int round_attr;
+    private String target_attr;
+    private String select_all;
     public String where;
     public String parent_where;
     public int row_count;
     public int column_count;
-
+    
+    // constructors
     public MyDB(Database in_data) {
       parent_where = " WHERE ";
       where = " WHERE ";
@@ -190,11 +196,14 @@ public class Process {
       data = in_data;
       table_name = data.getTableName();
       select_all = "SELECT * FROM " + table_name;
-      
+      ResultSet temp = null;
+     
       try {
-        ResultSet temp = data.query( count_str(where) );
+        
+        temp = data.query(count_str(where));
         temp.first();
         row_count = temp.getInt(1);
+        
         temp = data.query( select_all );
         ResultSetMetaData meta_temp = temp.getMetaData();
         column_count = meta_temp.getColumnCount() - 1;
@@ -203,7 +212,10 @@ public class Process {
           column_name[i] = meta_temp.getColumnName(i+1);
         }
         target_attr = meta_temp.getColumnName(column_count + 1);
+       
         data.close_conection();
+        temp.close();
+        
       } catch (SQLException ex) {
         Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
       }
@@ -216,12 +228,15 @@ public class Process {
       data = in_data;
       table_name = data.getTableName();
       select_all = "SELECT * FROM " + table_name;
+      ResultSet temp = null;
       
       try {
-        ResultSet temp = data.query(count_str(where));
+        
+        temp = data.query(count_str(where));
         temp.first();
         row_count = temp.getInt(1);
-        temp = data.query( select_all + where);
+        
+        temp = data.query(select_all + where);
         ResultSetMetaData meta_temp = temp.getMetaData();
         column_count = meta_temp.getColumnCount() - 1;
         column_name = new String[column_count];
@@ -229,30 +244,38 @@ public class Process {
           column_name[i] = meta_temp.getColumnName(i+1);
         }
         target_attr = meta_temp.getColumnName(column_count + 1);
+        
         data.close_conection();
+        temp.close();
+        
       } catch (SQLException ex) {
         Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
-
+    
+    // initialize target classes
     public void initialize_target_classes() {
       ResultSet temp;
       double max = 0;
       double min = 0;
-
+      double delta;
+      
       try {
+        
         temp = data.query( max_str(target_attr) );  
         temp.first();
         max = temp.getDouble(1);
         temp = data.query( min_str(target_attr) );
         temp.first();
         min = temp.getDouble(1);
-      
+        
+        temp.close();
+        
       } catch (SQLException ex) {
         Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
       }
       
-      double delta = (max - min)/number_of_target_classes;
+      delta = (max - min)/number_of_target_classes;
       target_classes = new double[number_of_target_classes + 1];
       
       for(int i = 0; i <= number_of_target_classes; i++) {
@@ -311,28 +334,31 @@ public class Process {
       return result;
     }
     
-    // 
+    // get the best pivot value to split the database 
     public double best_pivot(String Attr_name) {
       ResultSet dataset = data.query(select_by_and_sort(Attr_name));
       data.close_conection();
       double k = 0;
       double max_gain = 0;
+      double temp_pivot;
+      double temp;
       
       try {
         for(int i = 1; i <= row_count; i++) {
-            dataset.absolute(i);
-            double temp_pivot = dataset.getDouble(1);
-            double temp = Information_Gain(Attr_name, temp_pivot, this);
-            if(max_gain == 0) {
+          dataset.absolute(i);
+          temp_pivot = dataset.getDouble(1);
+          temp = Information_Gain(Attr_name, temp_pivot, this);
+
+          if(max_gain == 0) {
+            max_gain = temp;
+            k = temp_pivot;
+          }
+          else {
+            if(max_gain < temp) {
               max_gain = temp;
               k = temp_pivot;
             }
-            else {
-              if(max_gain < temp) {
-                max_gain = temp;
-                k = temp_pivot;
-              }
-            }
+          }
         }
       } catch (SQLException ex) {
         Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
@@ -344,6 +370,7 @@ public class Process {
     // split database base on attribute and value
     public MyDB split(String Attr_name, double f, int part) {
       String sql_query = where;
+      
       if(!" WHERE ".equals(where)) {
         sql_query = where + " AND ";
       }
@@ -354,6 +381,7 @@ public class Process {
       else {
         sql_query = sql_query + Attr_name  + " > " + f;
       }
+      
       return new MyDB(where, sql_query, data);
     } 
 
@@ -406,7 +434,7 @@ public class Process {
       return ("SELECT MIN(" + Attr_name + ") FROM " + table_name);
     }
     
-    public String count_str(String in_where) {
+    private String count_str(String in_where) {
       String where_str;
       where_str = " WHERE ".equals(in_where) ? "" : in_where;
       return ("SELECT COUNT(*) AS COUNT FROM " + table_name + where_str);
