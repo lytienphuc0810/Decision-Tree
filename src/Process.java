@@ -49,11 +49,13 @@ public class Process {
     System.out.println("+++ At node: " + MyDatabase.where + 
                        "\n--- Node on Path: " + MyTree.height + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
     
-    if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0 || MyDatabase.largest_percentage() >= 0.95) {
+    largest_percentage largest_class = MyDatabase.largest_percentage_class();
+    
+    if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0 || largest_class.percentage >= 0.95) {
       //TODO Prunning here
-      int i = MyDatabase.largest_percentage_class();
-      if (i != -1) {
-        System.out.println("Class: " + i + " with percentage: "+ MyDatabase.largest_percentage());
+      int i = largest_class.class_n;
+      if (i != 0) {
+        System.out.println("Class: " + i + " with percentage: "+ largest_class.percentage);
         MyTree.current.class_number = i;
       }
       else {
@@ -90,6 +92,7 @@ public class Process {
       
       MyTree.current.Attr_name = max_ig_attr;
       MyTree.current.pivot = pivot;
+      MyTree.current.information_gain = max_ig;
       MyTree.increase_tree_height();
       MyTree.add_to_tree( new Node(), false);
       Recursive_Build_Decision_Tree( MyDatabase.split(max_ig_attr, pivot, 1), MyTree );
@@ -100,6 +103,10 @@ public class Process {
       MyTree.backtrack();
       MyTree.decrease_tree_height();
     }
+  }
+  
+  public void Apply_Test_Dataset() {
+    
   }
 
   public void Build_Decision_Tree(String filename) {
@@ -174,6 +181,7 @@ public class Process {
   public class Node {
     public String Attr_name;
     public double pivot;
+    public double information_gain;
     public Node right;    
     public Node left;
     public Node parent;
@@ -186,8 +194,9 @@ public class Process {
       right = null;
       left = null;
       parent = null;
-      class_number = 0; 
+      class_number = 0;
       pivot = -1;
+      information_gain = -1;
     }
   }
   
@@ -413,25 +422,9 @@ public class Process {
       }
     }
     
-    // return the most percentage
-    public double largest_percentage() {
-      double max_percent = 0;
-      int k = 0;
-      String result = "";     
-      
-      for(int i = 1; i <= number_of_target_classes; i++) {
-        double percentage = percentage_of_target_attr(i);
-        if( max_percent < percentage) {
-          max_percent = percentage;
-          k = i;
-        }
-      }
-      
-      return k == 0 ? -1 : max_percent;
-    }
-
+    
     // return the class with most percentage
-    public int largest_percentage_class() {
+    public largest_percentage largest_percentage_class() {
       double max_percent = 0;
       int k = 0;
       String result = "";     
@@ -444,7 +437,7 @@ public class Process {
         }
       }
       
-      return k == 0 ? -1 : k;
+      return new largest_percentage(k, max_percent);
     }
 
     // SQL strings
@@ -470,6 +463,16 @@ public class Process {
 
     public int attr_count() {
       return column_count;
+    }
+  }
+  
+  public class largest_percentage {
+    public int class_n;
+    public double percentage;
+
+    public largest_percentage(int class_number, double percentage_in) {
+      class_n = class_number;
+      percentage = percentage_in;
     }
   }
 }
