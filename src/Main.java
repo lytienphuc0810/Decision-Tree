@@ -17,7 +17,7 @@ public class Main {
       String learning_file;      
       String class_number;
       String decision = null;
-      String test_file;
+      String test_file = null;
       
       System.out.println("Welcome to decision tree learning program");
       System.out.println("Input the learning dataset:");
@@ -39,7 +39,8 @@ public class Main {
       TreeDemo demo = new TreeDemo(MyTree);
       
       if("Y".equals(decision)) {
-//        p.Apply_Test_Dataset(MyTree, test_file);
+        MyTree.current = MyTree.root;
+        p.Apply_Test_Dataset(MyTree, test_file);
       }
     } catch (IOException ex) {
       Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);

@@ -10,6 +10,8 @@ public class Process {
   
   public int number_of_target_classes;
   
+  public int error_row_count = 0;
+  
   public double Entropy_Numeric(MyDB MyDatabase) {
     double result = 0.0;
     double percentage;
@@ -106,8 +108,32 @@ public class Process {
     }
   }
   
-  public void Apply_Test_Dataset() {
+  public void Recursive_Apply_Test(MyDB MyDatabase, Tree MyTree) {
+    if(MyTree.current.class_number == 0) {
+      String Attr_name = MyTree.current.Attr_name;
+      double pivot = MyTree.current.pivot;
+      
+      MyTree.current = MyTree.current.left;
+      Recursive_Apply_Test(MyDatabase.split(Attr_name, pivot, 1), MyTree);
+      MyTree.backtrack();
+      
+      MyTree.current = MyTree.current.right;
+      Recursive_Apply_Test(MyDatabase.split(Attr_name, pivot, 2), MyTree);
+      MyTree.backtrack();
+    }
+    else {
+      if(MyTree.current.class_number > 0) {
+        error_row_count += MyDatabase.error_rows(MyTree.current.class_number);
+      }
+    }
+  }
+  
+  public void Apply_Test_Dataset(Tree MyTree, String filename) {
+    Database database = new Database(filename);
+    MyDB MyDatabase = new MyDB(database);
     
+    Recursive_Apply_Test(MyDatabase, MyTree);
+    System.out.println("Number of Error Rows:" + error_row_count + ", percentage: " + ((double) error_row_count)/ ((double) MyDatabase.row_count));
   }
 
   public Tree Build_Decision_Tree(String filename, int n) {
@@ -334,7 +360,7 @@ public class Process {
       else {
         sql_query = sql_query + Attr_name  + " > " + f;
       }
-      
+//      System.out.println(sql_query);
       return new MyDB(where, sql_query, data);
     } 
 
@@ -369,6 +395,35 @@ public class Process {
       return new largest_percentage(k, max_percent);
     }
 
+    public int error_rows(int class_number) {
+      String sql_query = where;
+      String sql_error = sql_query;
+      int n = 0;
+      
+      if(!" WHERE ".equals(where)) {
+        sql_query = where + " AND ";
+      }
+      
+      sql_query = sql_query + "(" +  target_attr + " <= " + target_classes[class_number-1] + " OR " + target_attr + " >= " + target_classes[class_number] + ")";
+      sql_query = count_str(sql_query);
+
+      ResultSet current = data.query(sql_query);
+      
+      try {
+        
+        current.first();
+        n = current.getInt(1);
+        
+      } catch (SQLException ex) {
+        Logger.getLogger(Process.class.getName()).log(Level.SEVERE, null, ex);
+      }
+      if(n > 0) {
+        System.out.println("There are " + n + " error rows at: " + sql_error);
+      }
+              
+      return n;
+    }
+
     // SQL strings
     public String select_by_and_sort(String Attr_name) {
       String where_str;
@@ -393,6 +448,7 @@ public class Process {
     public int attr_count() {
       return column_count;
     }
+
   }
   
   public class largest_percentage {
