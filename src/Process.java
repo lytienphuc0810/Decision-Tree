@@ -49,6 +49,7 @@ public class Process {
     System.out.println("+++ At node: " + MyDatabase.where + 
                        "\n--- Node on Path: " + MyTree.height + " / " + MyDatabase.attr_count() + " has " + MyDatabase.row_count + " rows ");
     
+    MyTree.current.rows_number = MyDatabase.row_count;
     largest_percentage largest_class = MyDatabase.largest_percentage_class();
     
     if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0 || largest_class.percentage >= 0.95) {
@@ -109,7 +110,7 @@ public class Process {
     
   }
 
-  public void Build_Decision_Tree(String filename) {
+  public Tree Build_Decision_Tree(String filename) {
     //Recursive here
     Tree MyTree = new Tree();
     Database database = new Database(filename);
@@ -122,82 +123,8 @@ public class Process {
     }
     
     Recursive_Build_Decision_Tree(MyDatabase, MyTree);
-    int a =3;
-  }
-
-  public class Tree {
-    public Node root;
-    public Node current;
-    public int height;
     
-    public Tree() {
-      root = new Node();
-      current = root;
-      height = 0;
-    }
-    
-    public void add_to_tree(Node node, boolean right) {
-      if( root == null ) {
-        root = node;
-        current = node;
-      }
-      else {
-        if(right) {
-          current.right = node;
-          current.right.parent = current;
-          current = current.right;
-        }
-        else {
-          current.left = node;
-          current.left.parent = current;
-          current = current.left;
-        }
-      }
-    }
-    public void increase_tree_height() {
-      height++;
-    }
-    
-    public void decrease_tree_height() {
-      height--;
-    }
-    
-    public void backtrack() {
-      current = current.parent;
-    }
-    
-    public boolean not_in_branch(String Attr_name) {
-      Node temp = current;
-      while(temp != null) {
-        if( temp.Attr_name.equals(Attr_name) ) {
-          return false;
-        }
-        temp = temp.parent;
-      }
-      return true;
-    }
-  }
-
-  public class Node {
-    public String Attr_name;
-    public double pivot;
-    public double information_gain;
-    public Node right;    
-    public Node left;
-    public Node parent;
-    
-    // 0 la khong phai node la, -1 la ko thuoc class nao
-    public int class_number;
-
-    public Node() {
-      Attr_name = "";
-      right = null;
-      left = null;
-      parent = null;
-      class_number = 0;
-      pivot = -1;
-      information_gain = -1;
-    }
+    return MyTree;
   }
   
   public class MyDB {
