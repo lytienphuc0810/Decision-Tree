@@ -8,7 +8,7 @@ public class Process {
   
   public double target_classes[];
   
-  public int number_of_target_classes = 5;
+  public int number_of_target_classes;
   
   public double Entropy_Numeric(MyDB MyDatabase) {
     double result = 0.0;
@@ -110,8 +110,10 @@ public class Process {
     
   }
 
-  public Tree Build_Decision_Tree(String filename) {
-    //Recursive here
+  public Tree Build_Decision_Tree(String filename, int n) {
+    
+    number_of_target_classes = n;
+    
     Tree MyTree = new Tree();
     Database database = new Database(filename);
     MyDB MyDatabase = new MyDB(database);

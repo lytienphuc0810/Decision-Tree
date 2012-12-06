@@ -53,7 +53,7 @@ public class Database {
 			set = statement.executeQuery(query);
 		} catch (Exception e ) {
 			e.printStackTrace();
-                        System.out.println(query);
+//                        System.out.println(query);
 		}
 		return set;
 	}
@@ -261,7 +261,7 @@ public class Database {
 			statement.execute(query);
 			
 			statement.execute(insertDataQuery);
-			System.out.println("Write data successful!");
+//			System.out.println("Write data successful!");
 			
 			closeConnection(connection);	
 		} catch (Exception e) {
@@ -288,7 +288,7 @@ public class Database {
 
                      String query4 = createTableQuery();
                      statement.executeUpdate(query4);
-                     System.out.println("Create Database successful!");
+//                     System.out.println("Create Database successful!");
 			 
 			 closeConnection(connection);
 		} catch (Exception e) {
@@ -331,15 +331,15 @@ public class Database {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		System.out.println("Connected to database!");
+//		System.out.println("Connected to database!");
 		return conn;
 	}
 
 	private void closeConnection(Connection conn) {
 		try {
 			conn.close();
-			System.out.println("Close connection to database!");
-			System.out.println("");
+//			System.out.println("Close connection to database!");
+//			System.out.println("");
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}

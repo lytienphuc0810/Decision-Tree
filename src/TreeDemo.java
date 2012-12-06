@@ -84,7 +84,7 @@ public class TreeDemo extends JPanel
  
     /** Required by TreeSelectionListener interface. */
     public void valueChanged(TreeSelectionEvent e) {
-    	System.out.println("Clicked!");
+    	
         DefaultMutableTreeNode node = (DefaultMutableTreeNode)
                            tree.getLastSelectedPathComponent();
  
@@ -116,15 +116,22 @@ public class TreeDemo extends JPanel
     
     private String makeText(Node node) {
     	String str = "";
+    	str += "Number of rows: " + node.rows_number + "\n";
     	str += "Infomation Gain: " + node.information_gain + "\n";
     	str += "Pivot: " + node.pivot + "\n";
+    	return str;
+    }
+    
+    private String makeTextLeaf(Node node) {
+    	String str = "";
+    	str += "Number of rows: " + node.rows_number + "\n";
     	return str;
     }
     
     private void addNode(DefaultMutableTreeNode parent, Node child) {
     	DefaultMutableTreeNode cat;
     	if(child.Attr_name.equals("")) {
-    		cat = new DefaultMutableTreeNode(new NodeInfo(new Integer(child.class_number).toString(), makeText(child)));
+    		cat = new DefaultMutableTreeNode(new NodeInfo("Class" + new Integer(child.class_number).toString(), makeTextLeaf(child)));
             parent.add(cat);
     	} else {
     		cat = new DefaultMutableTreeNode(new NodeInfo(child.Attr_name, makeText(child)));
