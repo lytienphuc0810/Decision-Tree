@@ -54,7 +54,7 @@ public class Process {
     MyTree.current.rows_number = MyDatabase.row_count;
     largest_percentage largest_class = MyDatabase.largest_percentage_class();
     
-    if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0 || largest_class.percentage >= 0.95) {
+    if( MyTree.height == MyDatabase.attr_count() || MyDatabase.row_count == 0 || largest_class.percentage >= 0.99) {
       //TODO Prunning here
       int i = largest_class.class_n;
       if (i != 0) {
@@ -132,7 +132,12 @@ public class Process {
     Database database = new Database(filename);
     MyDB MyDatabase = new MyDB(database);
     
+    System.out.println();   
+    System.out.println();
+    System.out.println();
+    
     Recursive_Apply_Test(MyDatabase, MyTree);
+    
     System.out.println("Number of Error Rows:" + error_row_count + ", percentage: " + ((double) error_row_count)/ ((double) MyDatabase.row_count));
   }
 
@@ -404,7 +409,7 @@ public class Process {
         sql_query = where + " AND ";
       }
       
-      sql_query = sql_query + "(" +  target_attr + " <= " + target_classes[class_number-1] + " OR " + target_attr + " >= " + target_classes[class_number] + ")";
+      sql_query = sql_query + "(" +  target_attr + " < " + target_classes[class_number-1] + " OR " + target_attr + " >= " + target_classes[class_number] + ")";
       sql_query = count_str(sql_query);
 
       ResultSet current = data.query(sql_query);
